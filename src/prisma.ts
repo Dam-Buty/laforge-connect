@@ -15,7 +15,6 @@ export async function identifyPhoneNumber(threadId: string) {
 }
 
 export async function associateThread(phoneNumber: string, threadId: string) {
-  console.log("associating", phoneNumber, threadId);
   return prisma.conversation.create({
     data: { phoneNumber, threadId },
   });

@@ -1,7 +1,10 @@
 import { associateThread, identifyThread } from "../prisma";
 import { Payload } from "../routes/incoming";
 import { slackApp } from "../slack";
-import { incomingMessageNotification } from "../slack/notifications";
+import {
+  newMessageInThreadNotification,
+  newThreadNotification,
+} from "../slack/notifications";
 
 export async function pipeIncomingMessage(
   payload: Pick<Payload, "phoneNumber" | "message">
@@ -12,16 +15,19 @@ export async function pipeIncomingMessage(
 
   if (!thread) {
     const res = await slackApp.client.chat.postMessage(
-      incomingMessageNotification({ phoneNumber, message })
+      newThreadNotification({ phoneNumber, message })
     );
 
-    const { ts } = res;
+    const threadId = res.ts;
 
-    await associateThread(phoneNumber, ts);
+    await associateThread(phoneNumber, threadId);
   } else {
-    await slackApp.client.chat.postMessage({
-      ...incomingMessageNotification({ phoneNumber, message }),
-      thread_ts: thread.threadId,
-    });
+    await slackApp.client.chat.postMessage(
+      newMessageInThreadNotification({
+        phoneNumber,
+        message,
+        threadId: thread.threadId,
+      })
+    );
   }
 }

@@ -1,119 +1,120 @@
-# Literal Authorization Service
+# La Forge Connect
 
-This service is used to authorize a given company to use our public Docker image.
+This service provides a bi-lateral pipe between WhatsApp / SMS conversations and a Slack bot connected to a channel.
 
-## How it works
+The scenario works as follows :
 
-When a new Docker image is being built, this service will generate a version key for it. This version key is then used to encrypt the server bundle on the Docker image.
+- A user sends a message to the La Forge Connect phone number
+  - In this POC this is simulated by a request to the `/incoming` [endpoint](#Endpoints)
+- The message is relayed on Slack in the dedicated channel
+  - If it is the first message from this user a thread is created and associated to their phone number
+  - If they already have a thread open the message is posted in this thread
+- A Forgeron responds in the Slack thread
+- The response message is sent to the user
+  - In this POC it is simply [logged](<(src/services/send-response.ts)>) to the console
 
-When a new client requests access to the Docker image, their company will be registered on this service and assigned an authorization token.
+## Stack
 
-When the client boots up their Docker image with the right environment variables, the startup script will request the version key from this service, providing their client ID and authorization token. The version key will then be used to decrypt the server bundle.
+The following tools are used in this project :
+
+- [Express](https://expressjs.com/) (frugal HTTP server)
+- [Bolt for JS](https://api.slack.com/tools/bolt-js) (Slack SDK)
+- [Prisma](https://www.prisma.io/) (ORM)
+- [PostgreSQL](https://www.postgresql.org/) (Database)
 
 ## Get started
 
-This service is based on a simple Express server that communicates with a Redis database.
+### Requirements
+
+To run this project locally you need the following installed :
+
+- Node.js
+- Docker
+
+### Installing
+
+This service is based on a simple Express server that communicates with a PostgreSQL database hosted in a Docker container.
 
 ```bash
-# Install dependencies
-pnpm install
+# Install Node.js dependencies
+npm install
 
-# Run the Redis container
+# Run the PostgreSQL container
 docker-compose up -d
+```
+
+### Setting up your Slack application
+
+- Get the ID of the channel you want to work with
+  - In the Slack client, right-click the name of the channel
+  - Click "View channel details"
+  - Copy the Channel ID (it's in tiny print at the bottom of the modal)
+- Create a Slack application application [here](https://api.slack.com/apps?new_app=1&ref=bolt_start_hub)
+- In the **Basic Information** tab : take note of the _Signing Secret_
+- In the **Socket Mode** tab : click _Enable Socket Mode_
+  - This will guide you to create an app-level token with the `connections:write` scope
+  - take note of the token (it should start with `xapp-1`)
+- In the **OAuth & Permissions** tab :
+  - Add the following _Bot Token Scopes_ : `chat:write`, `channels:history`
+  - Click on "Install to <name of your workspace>"
+  - Click "Allow" in the OAuth authorization page
+  - Copy the _Bot User OAuth Token_ that was created (it should start with `xoxb`)
+- In the **Event Subscriptions** tab :
+  - Toggle _Enable Events_
+  - In the _Subscribe to bot events_ section, add the following Event : `message.channels`
+  - Click _Save Changes_
+
+### Setting your environment variables
+
+You can copy the `.env.example` file as `.env` and fill in the following values :
+
+| Environment variable           | Value                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------- |
+| **PORT**                       | This is the port on which the Express server will listen                              |
+| **DATABASE_URL**               | In `postgresql://xx:xx@xx:xx/xx` format                                               |
+| **SLACK_NOTIFICATION_CHANNEL** | This is the channel where the notifications are sent when a new client is registered. |
+| **SLACK_SIGNING_SECRET**       | The signing secret of the Slack app. Get it in the **Basic Information** tab          |
+| **SLACK_BOT_TOKEN**            | The bot token of the Slack app. Get it in the **OAuth & Permissions** tab             |
+| **SLACK_APP_TOKEN**            | The app token of the Slack app. Get it in the **Basic Information** tab               |
+
+### Running the project
+
+```bash
+# Run in dev mode with live-reload
+npm run dev
 
 # Run in production
-pnpm start
-
-# Run in development
-pnpm dev
+npm start
 ```
 
-## Required environment variables
+If everything is well configured you should see the following logs, confirming that the connection to the Slack app is functioning :
 
-The defaults can be found in [src/config.ts](src/config.ts).
+```
+[INFO]  socket-mode:SocketModeClient:0 Going to establish a new connection to Slack ...
+⚡️ Slack app is listening!
+[INFO]  socket-mode:SocketModeClient:0 Now connected to Slack
+```
 
-- `LITERAL_AUTH_SECRET_KEY`: This secret key is unique to Literal and should never be communicated to anyone. It allows both the Docker build script and the form on the Literal website to register versions and clients.
-- `PORT`
-- `DATABASE_URL` : `postgresql://xx:xx@xx:xx/xx`
-- `SLACK_NOTIFICATION_CHANNEL` : This is the channel where the notifications are sent when a new client is registered.
-- `SLACK_SIGNING_SECRET` : The signing secret of the Slack app. Get it [here](https://api.slack.com/apps/A076AQ1J24Q)
-- `SLACK_BOT_TOKEN` : The bot token of the Slack app. Get it [here](https://api.slack.com/apps/A076AQ1J24Q/oauth)
-- `SLACK_APP_TOKEN` : The app token of the Slack app. Get it [here](https://api.slack.com/apps/A076AQ1J24Q)
-- `EMAIL_SERVER_HOST` : The SMTP server host
-- `EMAIL_SERVER_PORT` : The SMTP server port
-- `EMAIL_FROM` : The email address that will be used to send the emails
+## Simulating a message
 
-## Endpoints
+To simulate receiving a message from a user, you just need to make an HTTP request (using [Insomnia](https://insomnia.rest/), [Postman](https://www.postman.com/)) to the server with the following parameters :
 
-You can test the endpoints on [Insomnia](https://insomnia.rest/) using [this collection](insomnia.json).
-
-### POST /register-version
-
-Registers a new version of the server bundle and assigns a version key to it.
-
-HTTP Headers:
-
-- `x-literal-auth-secret-key`: The secret key that allows the registration of new versions & clients. It will be checked against the `LITERAL_AUTH_SECRET_KEY` environment variable.
-
-JSON Body:
+- **Method** : POST
+- **Endpoint** : `/incoming`
+- **Content-Type** : `application/json`
+- **Body**
 
 ```json
 {
-  "versionId": "x.y.z"
+  "payload": {
+    "phoneNumber": "+33651425444",
+    "message": "Comment faire une billion dollar company ?"
+  }
 }
 ```
 
-Response:
+HTTP Response:
 
-```json
-{
-  "versionId": "x.y.z",
-  "versionKey": "abc123"
-}
-```
-
-### POST /register-client
-
-Registers a new client and assigns an authorization token to it. An email containing the client ID and authorization token will be sent to the provided email address.
-
-⚠️ The email needs to be a company email and not a personal one (gmail, etc...).
-
-JSON Body:
-
-```json
-{
-  "userName": "Jean-Luc Yaourtaboire",
-  "userPosition": "Chief Dairy Officer",
-  "userCompany": "Yop Inc.",
-  "userEmail": "jean-luc@yop.com"
-}
-```
-
-Response:
-
-```json
-{
-  "clientId": "yop-inc"
-}
-```
-
-### POST /version-key
-
-Authenticates a client with their ID and authorization token and returns the version key for the requested version.
-
-HTTP Headers:
-
-- `x-literal-client-id`: The client ID that was assigned when registering the client.
-- `x-literal-auth-token`: The authorization token that was sent to the client's email.
-
-Query parameters:
-
-- `versionId`: The client ID that was assigned when registering the client.
-
-Response:
-
-```json
-{
-  "versionKey": "abc123"
-}
-```
+- **200** : Message was received
+- **400** : The JSON body is not valid
+- **500** : An unknown error happened (see logs)
