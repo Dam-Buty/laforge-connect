@@ -2,6 +2,7 @@
   "name": "literal-authorization",
   "version": "0.0.0",
   "scripts": {
+    "build": "echo 😎",
     "start": "prisma migrate deploy && ts-node ./src/server",
     "dev": "ts-node-dev --respawn --transpile-only src/server",
     "lint": "eslint src/",
