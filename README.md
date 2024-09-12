@@ -5,7 +5,7 @@ This service provides a bi-lateral pipe between WhatsApp / SMS conversations and
 The scenario works as follows :
 
 - A user sends a message to the La Forge Connect phone number
-  - In this POC this is simulated by a request to the `/incoming` [endpoint](#Endpoints)
+  - In this POC this is simulated by a request to the `/incoming` [endpoint](#simulating-a-message)
 - The message is relayed on Slack in the dedicated channel
   - If it is the first message from this user a thread is created and associated to their phone number
   - If they already have a thread open the message is posted in this thread
