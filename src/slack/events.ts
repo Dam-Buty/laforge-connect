@@ -1,5 +1,6 @@
 import { App as SlackApp } from "@slack/bolt";
 import { identifyPhoneNumber } from "../prisma";
+import { sendResponse } from "../services/send-response";
 
 export const initSlackEvents = (slackApp: SlackApp) => {
   slackApp.message(async ({ message }) => {
@@ -16,6 +17,6 @@ export const initSlackEvents = (slackApp: SlackApp) => {
       return;
     }
 
-    console.log("Message is being sent", association.phoneNumber, response);
+    await sendResponse(association.phoneNumber, response);
   });
 };
