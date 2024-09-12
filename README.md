@@ -131,3 +131,13 @@ HTTP Response:
 - **200** : Message was received
 - **400** : The JSON body is not valid
 - **500** : An unknown error happened (see logs)
+
+## TODO / Ideas
+
+- Sign the response message with the Slack username of the responder
+- "Bump" the thread when a new message is received : so that active conversations are always at the bottom of the channel
+- Scratchpad mode :
+  - in this mode, messages posted in the thread are not sent directly to the user
+  - rather, the forgerons can discuss & exchange ideas in the thread
+  - when they want to respond to the user, they just have to react to a message with the appropriate emoji, and that message is sent
+  - LLM agents can discuss in the thread and suggest responses but they can't communicate directly with the user
