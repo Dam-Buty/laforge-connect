@@ -33,8 +33,6 @@ To run this project locally you need the following installed :
 
 ### Installing
 
-This service is based on a simple Express server that communicates with a PostgreSQL database hosted in a Docker container.
-
 ```bash
 # Install Node.js dependencies
 npm install
@@ -56,7 +54,7 @@ docker-compose up -d
   - take note of the token (it should start with `xapp-1`)
 - In the **OAuth & Permissions** tab :
   - Add the following _Bot Token Scopes_ : `chat:write`, `channels:history`
-  - Click on "Install to <name of your workspace>"
+  - Click on "Install to `workspace`"
   - Click "Allow" in the OAuth authorization page
   - Copy the _Bot User OAuth Token_ that was created (it should start with `xoxb`)
 - In the **Event Subscriptions** tab :
@@ -97,7 +95,22 @@ If everything is well configured you should see the following logs, confirming t
 
 ## Simulating a message
 
-To simulate receiving a message from a user, you just need to make an HTTP request (using [Insomnia](https://insomnia.rest/), [Postman](https://www.postman.com/)) to the server with the following parameters :
+To simulate receiving a message from a user, you just need to make an HTTP request using curl :
+
+```sh
+curl --request POST \
+  --url http://localhost:3005/incoming \
+  --header 'Content-Type: application/json' \
+  --header 'User-Agent: insomnia/2023.5.8' \
+  --data '{
+	"payload": {
+		"phoneNumber": "+33651425444",
+		"message": "Comment faire une billion dollar company ?"
+	}
+}'
+```
+
+Or [Insomnia](https://insomnia.rest/) / [Postman](https://www.postman.com/) with the following parameters :
 
 - **Method** : POST
 - **Endpoint** : `/incoming`
