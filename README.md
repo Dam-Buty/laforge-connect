@@ -141,3 +141,9 @@ HTTP Response:
   - rather, the forgerons can discuss & exchange ideas in the thread
   - when they want to respond to the user, they just have to react to a message with the appropriate emoji, and that message is sent
   - LLM agents can discuss in the thread and suggest responses but they can't communicate directly with the user
+
+## Twilio tech reference :
+
+* [Receive SMS](https://github.com/Dam-Buty/laforge-connect?tab=readme-ov-file#todo--ideas) without replying immediately
+* [Secure webhook](https://www.twilio.com/docs/usage/tutorials/how-to-secure-your-express-app-by-validating-incoming-twilio-requests#use-twilio-express-request-validation-middleware) using Twilio's SDK
+* [Send an SMS](https://www.twilio.com/docs/usage/api#send-an-sms-with-twilios-api) using Twilio's API
